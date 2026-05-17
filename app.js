@@ -23,12 +23,21 @@ const SINAV_YAPISI = {
     "SEK": { "Emotionen regulieren 😌": 12, "Emotionen erkennen 🎭": 14, "Sociales Entscheiden 🤝": 14 }
 };
 
+// --- PERCENTAGE STRUCTURE ---
+const SINAV_YUZDELERI = {
+    "BMS": { "Biologie 🧬": 17, "Chemie 🧪": 10, "Physik ⚛️": 8, "Mathe 🧮": 5 },
+    "TV": { "TV 📖": 10 },
+    "KFF": { "Figuren zusammensetzen 🧩": 8, "Zahlenfolgen 🔢": 5, "Wortflüssigkeit 🔠": 8, "GD Abrufphase 🧠": 13, "Implikationen 💡": 5 },
+    "SEK": { "Emotionen regulieren 😌": 10/3, "Emotionen erkennen 🎭": 10/3, "Sociales Entscheiden 🤝": 10/3 }
+};
+
 const authContainer = document.getElementById('authContainer'), appContainer = document.getElementById('appContainer'), welcomeText = document.getElementById('welcomeText');
-const homeView = document.getElementById('homeView'), dataView = document.getElementById('dataView'), graphView = document.getElementById('graphView');
+const homeView = document.getElementById('homeView'), dataView = document.getElementById('dataView'), graphView = document.getElementById('graphView'), percentView = document.getElementById('percentView');
 const categoryInput = document.getElementById('categoryInput'), subCategoryInput = document.getElementById('subCategoryInput'), tableBody = document.getElementById('tableBody');
 const graphCatSelect = document.getElementById('graphCatSelect'), graphSubSelect = document.getElementById('graphSubSelect');
+const percentCatSelect = document.getElementById('percentCatSelect'), percentSubSelect = document.getElementById('percentSubSelect');
 
-let currentUser = null, myChartInstance = null, isLoginMode = true, tumVeriler = []; 
+let currentUser = null, myChartInstance = null, percentChartInstance = null, isLoginMode = true, tumVeriler = []; 
 
 function formatliTarih(tarihString) {
     const aylar = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -58,16 +67,20 @@ function populateSubCategories(catValue, targetSelect, showAllOption = false) {
 categoryInput.addEventListener('change', (e) => populateSubCategories(e.target.value, subCategoryInput, false));
 graphCatSelect.addEventListener('change', (e) => { populateSubCategories(e.target.value, graphSubSelect, true); updateGraph(); });
 graphSubSelect.addEventListener('change', () => updateGraph());
+percentCatSelect.addEventListener('change', (e) => { populateSubCategories(e.target.value, percentSubSelect, true); updatePercentGraph(); });
+percentSubSelect.addEventListener('change', () => updatePercentGraph());
 
 function showView(viewName) {
-    [homeView, dataView, graphView].forEach(v => v.style.display = 'none');
+    [homeView, dataView, graphView, percentView].forEach(v => v.style.display = 'none');
     document.getElementById('homeBtn').style.display = 'block';
     if (viewName === 'home') { homeView.style.display = 'flex'; document.getElementById('homeBtn').style.display = 'none'; }
     else if (viewName === 'data') { dataView.style.display = 'block'; setTodayDate(); renderTable(); }
     else if (viewName === 'graph') { graphView.style.display = 'block'; updateGraph(); }
+    else if (viewName === 'percent') { percentView.style.display = 'block'; updatePercentGraph(); }
 }
 document.getElementById('navToDataBtn').addEventListener('click', () => showView('data'));
 document.getElementById('navToGraphBtn').addEventListener('click', () => showView('graph'));
+document.getElementById('navToPercentBtn').addEventListener('click', () => showView('percent'));
 document.getElementById('homeBtn').addEventListener('click', () => showView('home'));
 
 document.getElementById('switchAuth').addEventListener('click', () => {
@@ -129,7 +142,9 @@ window.veriSil = async function(docId) {
     if (confirm("Are you sure you want to completely delete this data?")) {
         try {
             await deleteDoc(doc(db, "calismalar", docId)); await fetchDataFromFirebase(); 
-            if (dataView.style.display === 'block') renderTable(); if (graphView.style.display === 'block') updateGraph(); 
+            if (dataView.style.display === 'block') renderTable(); 
+            if (graphView.style.display === 'block') updateGraph(); 
+            if (percentView.style.display === 'block') updatePercentGraph(); 
         } catch (error) { alert("An error occurred while deleting!"); }
     }
 }
@@ -158,26 +173,30 @@ function renderTable() {
 
     siraliTarihler.forEach(tarih => {
         const thRow = document.createElement('tr');
-        thRow.innerHTML = `<td colspan="3" style="background: linear-gradient(90deg, #2c3e50, #34495e); color: white; font-size: 16px; padding: 14px; text-transform: uppercase; letter-spacing: 2px; text-align: center; border-radius: 6px;">🗓️ ${formatliTarih(tarih)}</td>`;
+        thRow.innerHTML = `<td colspan="4" style="background: linear-gradient(90deg, #2c3e50, #34495e); color: white; font-size: 16px; padding: 14px; text-transform: uppercase; letter-spacing: 2px; text-align: center; border-radius: 6px;">🗓️ ${formatliTarih(tarih)}</td>`;
         tableBody.appendChild(thRow);
 
         Object.keys(grupluVeriler[tarih]).forEach(kat => {
             const catRow = document.createElement('tr');
             catRow.className = "cat-header";
-            catRow.innerHTML = `<td colspan="3">🔹 ${kat} Category</td>`;
+            catRow.innerHTML = `<td colspan="4">🔹 ${kat} Category</td>`; 
             tableBody.appendChild(catRow);
 
             const bölümSayilari = {};
-            grupluVeriler[tarih][kat].forEach(d => {
-                bölümSayilari[d.bolum] = (bölümSayilari[d.bolum] || 0) + 1;
-            });
+            grupluVeriler[tarih][kat].forEach(d => { bölümSayilari[d.bolum] = (bölümSayilari[d.bolum] || 0) + 1; });
 
             const subCatSayaci = {};
             grupluVeriler[tarih][kat].forEach(data => {
                 const tr = document.createElement('tr');
+                
                 let maksSoru = "?";
+                let dersinSinavYuzdesi = 0;
+                let hesaplananYuzde = "0.0";
+
                 if (SINAV_YAPISI[data.kategori] && SINAV_YAPISI[data.kategori][data.bolum]) {
                     maksSoru = SINAV_YAPISI[data.kategori][data.bolum];
+                    dersinSinavYuzdesi = SINAV_YUZDELERI[data.kategori][data.bolum];
+                    hesaplananYuzde = ((data.soru / maksSoru) * dersinSinavYuzdesi).toFixed(1);
                 }
 
                 let denemeBadge = "";
@@ -187,9 +206,13 @@ function renderTable() {
                     denemeBadge = `<span style="font-size:12px; color:#777; margin-left:5px;">(Attempt ${subCatSayaci[data.bolum]})</span>`;
                 }
 
+                const gosterilecekMaxYuzde = dersinSinavYuzdesi % 1 === 0 ? dersinSinavYuzdesi : dersinSinavYuzdesi.toFixed(1);
+
+                // DEĞİŞİKLİK BURADA: Hesaplanan yüzde artık yeşil değil, standart siyah kalın fontta (<strong>)
                 tr.innerHTML = `
                     <td style="padding-left: 20px;">${data.bolum} ${denemeBadge}</td>
                     <td><strong>${data.soru}</strong> / ${maksSoru}</td>
+                    <td><strong>${hesaplananYuzde}%</strong> / ${gosterilecekMaxYuzde}%</td>
                     <td style="text-align: center;">
                         <button class="delete-btn" onclick="veriSil('${data.id}')" title="Delete">🗑️</button>
                     </td>
@@ -200,71 +223,50 @@ function renderTable() {
     });
 }
 
-function updateGraph() {
-    const secilenCat = graphCatSelect.value;
-    const secilenSub = graphSubSelect.value;
+function getTrafficColor(value, max, isBackground = false) {
+    const ratio = value / max;
+    if (ratio <= 1/3) return isBackground ? 'rgba(220, 53, 69, 0.15)' : 'rgba(220, 53, 69, 1)'; 
+    else if (ratio <= 2/3) return isBackground ? 'rgba(255, 193, 7, 0.15)' : 'rgba(255, 193, 7, 1)';  
+    else return isBackground ? 'rgba(40, 167, 69, 0.15)' : 'rgba(40, 167, 69, 1)';  
+}
 
+function updateGraph() {
+    const secilenCat = graphCatSelect.value, secilenSub = graphSubSelect.value;
     let yEkseniMaksimumu = 0;
-    if (secilenCat === 'TUM') {
-        Object.values(SINAV_YAPISI).forEach(kat => { Object.values(kat).forEach(val => yEkseniMaksimumu += val); });
-    } else if (secilenSub === 'TUM') {
-        Object.values(SINAV_YAPISI[secilenCat]).forEach(val => yEkseniMaksimumu += val);
-    } else {
-        yEkseniMaksimumu = SINAV_YAPISI[secilenCat][secilenSub];
-    }
+    if (secilenCat === 'TUM') { Object.values(SINAV_YAPISI).forEach(kat => Object.values(kat).forEach(val => yEkseniMaksimumu += val)); }
+    else if (secilenSub === 'TUM') { Object.values(SINAV_YAPISI[secilenCat]).forEach(val => yEkseniMaksimumu += val); }
+    else { yEkseniMaksimumu = SINAV_YAPISI[secilenCat][secilenSub]; }
 
     let filtrelenmis = tumVeriler;
     if (secilenCat !== 'TUM') {
         filtrelenmis = filtrelenmis.filter(v => v.kategori === secilenCat);
-        if (secilenSub !== 'TUM') { filtrelenmis = filtrelenmis.filter(v => v.bolum === secilenSub); }
+        if (secilenSub !== 'TUM') filtrelenmis = filtrelenmis.filter(v => v.bolum === secilenSub); 
     }
 
-    const gunlukVeriler = {}; 
-    const denemeTracker = {}; 
-
+    const gunlukVeriler = {}, denemeTracker = {}; 
     filtrelenmis.forEach(v => {
-        const tKey = v.tarih;
-        const subKey = v.kategori + "_" + v.bolum; 
-
+        const tKey = v.tarih, subKey = v.kategori + "_" + v.bolum; 
         if (!denemeTracker[tKey]) denemeTracker[tKey] = {};
         if (!denemeTracker[tKey][subKey]) denemeTracker[tKey][subKey] = 0;
-        
         denemeTracker[tKey][subKey]++; 
         const dNo = denemeTracker[tKey][subKey];
-
         if (!gunlukVeriler[tKey]) gunlukVeriler[tKey] = {};
         if (!gunlukVeriler[tKey][dNo]) gunlukVeriler[tKey][dNo] = 0;
-
         gunlukVeriler[tKey][dNo] += v.soru;
     });
 
-    const X_Ekseni_Etiketleri = [];
-    const Y_Ekseni_Sorular = [];
-
+    const X_Ekseni_Etiketleri = [], Y_Ekseni_Sorular = [];
     const siraliTarihler = Object.keys(gunlukVeriler).sort((a,b) => new Date(a) - new Date(b));
-
     siraliTarihler.forEach(tarih => {
-        const denemeler = gunlukVeriler[tarih]; 
-        const denemeNolar = Object.keys(denemeler).map(Number).sort((a,b) => a - b);
+        const denemeler = gunlukVeriler[tarih], denemeNolar = Object.keys(denemeler).map(Number).sort((a,b) => a - b);
         const isMultiple = denemeNolar.length > 1;
-
         denemeNolar.forEach(dNo => {
-            // (1.D) yerine (A1) -> Attempt 1 olarak çevirdik
-            const etiket = isMultiple ? `${formatliTarih(tarih)} (A${dNo})` : formatliTarih(tarih);
-            X_Ekseni_Etiketleri.push(etiket);
+            X_Ekseni_Etiketleri.push(isMultiple ? `${formatliTarih(tarih)} (A${dNo})` : formatliTarih(tarih));
             Y_Ekseni_Sorular.push(denemeler[dNo]);
         });
     });
 
-    let grafikBasligi = secilenCat === 'TUM' ? "All Exam Studies" : (secilenSub !== 'TUM' ? `${secilenCat} - ${secilenSub}` : `${secilenCat} Grand Total`);
-
-    function getTrafficColor(value, max, isBackground = false) {
-        const ratio = value / max;
-        if (ratio <= 1/3) return isBackground ? 'rgba(220, 53, 69, 0.15)' : 'rgba(220, 53, 69, 1)'; 
-        else if (ratio <= 2/3) return isBackground ? 'rgba(255, 193, 7, 0.15)' : 'rgba(255, 193, 7, 1)';  
-        else return isBackground ? 'rgba(40, 167, 69, 0.15)' : 'rgba(40, 167, 69, 1)';  
-    }
-
+    let grafikBasligi = secilenCat === 'TUM' ? "All Exam Studies (Questions)" : (secilenSub !== 'TUM' ? `${secilenCat} - ${secilenSub}` : `${secilenCat} Total Questions`);
     const noktaRenkleri = Y_Ekseni_Sorular.map(soru => getTrafficColor(soru, yEkseniMaksimumu, false));
 
     if (myChartInstance != null) myChartInstance.destroy();
@@ -275,10 +277,8 @@ function updateGraph() {
         data: {
             labels: X_Ekseni_Etiketleri,
             datasets: [{
-                label: grafikBasligi,
-                data: Y_Ekseni_Sorular,
-                pointBackgroundColor: noktaRenkleri,
-                pointBorderColor: noktaRenkleri,
+                label: grafikBasligi, data: Y_Ekseni_Sorular,
+                pointBackgroundColor: noktaRenkleri, pointBorderColor: noktaRenkleri,
                 pointRadius: 6, pointHoverRadius: 8, borderWidth: 4, fill: true,
                 segment: {
                     borderColor: ctx => {
@@ -295,13 +295,98 @@ function updateGraph() {
                         gradient.addColorStop(1, getTrafficColor(ctx.p1.parsed.y, yEkseniMaksimumu, true));
                         return gradient;
                     }
-                },
-                tension: 0.2
+                }, tension: 0.2
             }]
         },
-        options: {
-            responsive: true,
-            scales: { y: { beginAtZero: true, max: yEkseniMaksimumu } }
+        options: { responsive: true, scales: { y: { beginAtZero: true, max: yEkseniMaksimumu } } }
+    });
+}
+
+function updatePercentGraph() {
+    const secilenCat = percentCatSelect.value, secilenSub = percentSubSelect.value;
+    let yEkseniMaksimumu = 0;
+    if (secilenCat === 'TUM') { yEkseniMaksimumu = 100; } 
+    else if (secilenSub === 'TUM') { Object.values(SINAV_YUZDELERI[secilenCat]).forEach(val => yEkseniMaksimumu += val); }
+    else { yEkseniMaksimumu = SINAV_YUZDELERI[secilenCat][secilenSub]; }
+
+    let filtrelenmis = tumVeriler;
+    if (secilenCat !== 'TUM') {
+        filtrelenmis = filtrelenmis.filter(v => v.kategori === secilenCat);
+        if (secilenSub !== 'TUM') filtrelenmis = filtrelenmis.filter(v => v.bolum === secilenSub); 
+    }
+
+    const gunlukVeriler = {}, denemeTracker = {}; 
+    filtrelenmis.forEach(v => {
+        const tKey = v.tarih, subKey = v.kategori + "_" + v.bolum; 
+        if (!denemeTracker[tKey]) denemeTracker[tKey] = {};
+        if (!denemeTracker[tKey][subKey]) denemeTracker[tKey][subKey] = 0;
+        denemeTracker[tKey][subKey]++; 
+        const dNo = denemeTracker[tKey][subKey];
+        if (!gunlukVeriler[tKey]) gunlukVeriler[tKey] = {};
+        if (!gunlukVeriler[tKey][dNo]) gunlukVeriler[tKey][dNo] = 0;
+        
+        const dersMaxSoru = SINAV_YAPISI[v.kategori][v.bolum];
+        const dersinSinavYuzdesi = SINAV_YUZDELERI[v.kategori][v.bolum];
+        const hesaplananYuzde = (v.soru / dersMaxSoru) * dersinSinavYuzdesi;
+        
+        gunlukVeriler[tKey][dNo] += hesaplananYuzde;
+    });
+
+    const X_Ekseni_Etiketleri = [], Y_Ekseni_Sorular = [];
+    const siraliTarihler = Object.keys(gunlukVeriler).sort((a,b) => new Date(a) - new Date(b));
+    siraliTarihler.forEach(tarih => {
+        const denemeler = gunlukVeriler[tarih], denemeNolar = Object.keys(denemeler).map(Number).sort((a,b) => a - b);
+        const isMultiple = denemeNolar.length > 1;
+        denemeNolar.forEach(dNo => {
+            X_Ekseni_Etiketleri.push(isMultiple ? `${formatliTarih(tarih)} (A${dNo})` : formatliTarih(tarih));
+            Y_Ekseni_Sorular.push(denemeler[dNo]);
+        });
+    });
+
+    let grafikBasligi = secilenCat === 'TUM' ? "Total Exam Readiness (%)" : (secilenSub !== 'TUM' ? `${secilenCat} - ${secilenSub} (%)` : `${secilenCat} Percentage`);
+    const noktaRenkleri = Y_Ekseni_Sorular.map(yuzde => getTrafficColor(yuzde, yEkseniMaksimumu, false));
+
+    if (percentChartInstance != null) percentChartInstance.destroy();
+    const ctx = document.getElementById('percentChart').getContext('2d');
+    
+    percentChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: X_Ekseni_Etiketleri,
+            datasets: [{
+                label: grafikBasligi, data: Y_Ekseni_Sorular,
+                pointBackgroundColor: noktaRenkleri, pointBorderColor: noktaRenkleri,
+                pointRadius: 6, pointHoverRadius: 8, borderWidth: 4, fill: true,
+                segment: {
+                    borderColor: ctx => {
+                        if (!ctx.p0 || !ctx.p1) return;
+                        const gradient = ctx.chart.ctx.createLinearGradient(ctx.p0.x, 0, ctx.p1.x, 0);
+                        gradient.addColorStop(0, getTrafficColor(ctx.p0.parsed.y, yEkseniMaksimumu, false));
+                        gradient.addColorStop(1, getTrafficColor(ctx.p1.parsed.y, yEkseniMaksimumu, false));
+                        return gradient;
+                    },
+                    backgroundColor: ctx => {
+                        if (!ctx.p0 || !ctx.p1) return;
+                        const gradient = ctx.chart.ctx.createLinearGradient(ctx.p0.x, 0, ctx.p1.x, 0);
+                        gradient.addColorStop(0, getTrafficColor(ctx.p0.parsed.y, yEkseniMaksimumu, true));
+                        gradient.addColorStop(1, getTrafficColor(ctx.p1.parsed.y, yEkseniMaksimumu, true));
+                        return gradient;
+                    }
+                }, tension: 0.2
+            }]
+        },
+        options: { 
+            responsive: true, 
+            scales: { 
+                y: { 
+                    beginAtZero: true, 
+                    max: yEkseniMaksimumu,
+                    ticks: { callback: function(value) { return value.toFixed(1) + '%'; } }
+                } 
+            },
+            plugins: {
+                tooltip: { callbacks: { label: function(context) { return context.parsed.y.toFixed(2) + '%'; } } }
+            }
         }
     });
 }
