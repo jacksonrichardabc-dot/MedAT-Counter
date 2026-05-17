@@ -31,7 +31,8 @@
         
         <div id="homeView" class="menu-grid">
             <button id="navToDataBtn" class="big-btn yellow-btn">📝 Add Data</button>
-            <button id="navToGraphBtn" class="big-btn yellow-btn">📊 View Graphs</button>
+            <button id="navToGraphBtn" class="big-btn yellow-btn">📊 View Question Graphs</button>
+            <button id="navToPercentBtn" class="big-btn yellow-btn">💯 Percent Calculation</button>
         </div>
 
         <div id="dataView" style="display: none;">
@@ -59,6 +60,7 @@
                         <tr>
                             <th>Section</th>
                             <th>Score / Max</th>
+                            <th>Percentage / Max</th>
                             <th style="width: 50px; text-align: center;">Del</th>
                         </tr>
                     </thead>
@@ -70,7 +72,7 @@
 
         <div id="graphView" style="display: none;">
             <div class="filter-card">
-                <h3>🔍 Graph Filter</h3>
+                <h3>🔍 Question Graph Filter</h3>
                 <div class="filter-group">
                     <select id="graphCatSelect">
                         <option value="TUM">Total Exam Score</option>
@@ -84,9 +86,29 @@
                     </select>
                 </div>
             </div>
-            
             <div class="chart-wrapper">
                 <canvas id="myChart"></canvas>
+            </div>
+        </div>
+
+        <div id="percentView" style="display: none;">
+            <div class="filter-card">
+                <h3>💯 Percentage Filter</h3>
+                <div class="filter-group">
+                    <select id="percentCatSelect">
+                        <option value="TUM">Total Exam Percentage</option>
+                        <option value="BMS">BMS Category</option>
+                        <option value="TV">TV Category</option>
+                        <option value="KFF">KFF Category</option>
+                        <option value="SEK">SEK Category</option>
+                    </select>
+                    <select id="percentSubSelect" disabled>
+                        <option value="TUM">Total of All Sections</option>
+                    </select>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="percentChart"></canvas>
             </div>
         </div>
 
