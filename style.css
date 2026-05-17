@@ -1,0 +1,59 @@
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { background-color: #f4f7f6; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 40px 20px; }
+.container { background-color: white; width: 100%; max-width: 650px; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+h1 { color: #333; margin-bottom: 25px; font-size: 24px; text-align: center; }
+
+.header-inline { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+.header-inline h1 { margin-bottom: 0; font-size: 22px; text-align: left; }
+.header-buttons { display: flex; gap: 10px; }
+
+form, .select-group, .filter-group { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+.select-group, .filter-group { flex-direction: row; }
+.select-group select, .filter-group select { width: 100%; }
+
+input, select { padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background-color: white; }
+input:focus, select:focus { border-color: #007bff; }
+
+/* NORMAL BUTON STİLLERİ */
+button { background-color: #007bff; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+button:hover { background-color: #0056b3; }
+.danger-btn { background-color: #dc3545; padding: 10px 14px; font-size: 14px; }
+.danger-btn:hover { background-color: #bd2130; }
+.nav-btn { background-color: #6c757d; padding: 10px 14px; font-size: 14px; }
+.nav-btn:hover { background-color: #5a6268; }
+
+/* YENİ EKLENEN SARI BUTON STİLİ */
+.yellow-btn {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+.yellow-btn:hover {
+    background-color: #e0a800 !important;
+    color: #212529 !important;
+}
+
+#toggleAuthText { text-align: center; margin-top: 15px; font-size: 14px; color: #666; }
+#switchAuth { color: #007bff; cursor: pointer; text-decoration: underline; font-weight: bold; }
+
+/* MENÜ BUTONLARI */
+.menu-grid { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
+.big-btn { padding: 30px; font-size: 20px; border-radius: 12px; display: flex; justify-content: center; align-items: center; gap: 10px; background-color: #f8f9fa; color: #333; border: 2px solid #007bff; transition: all 0.2s ease; }
+/* Sarı olan büyük butonlar için kenarlık rengi ayarı */
+.big-btn.yellow-btn { border: 2px solid #ffc107; }
+.big-btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+
+/* TABLO */
+.table-wrapper { width: 100%; max-height: 450px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th, td { padding: 12px; border-bottom: 1px solid #eee; }
+th { background-color: #f8f9fa; position: sticky; top: 0; color: #333; z-index: 2; }
+.date-header { background-color: #e9ecef !important; font-weight: bold; color: #0056b3; text-align: center; font-size: 15px; letter-spacing: 1px; }
+.cat-header { background-color: #fdfdfd; font-weight: bold; color: #555; font-size: 14px; border-left: 4px solid #007bff; }
+tr:hover:not(.date-header):not(.cat-header) { background-color: #f1f1f1; }
+
+.delete-btn { background: transparent; border: none; font-size: 18px; color: #dc3545; cursor: pointer; padding: 5px; transition: 0.2s; }
+.delete-btn:hover { background-color: #ffe6e6; transform: scale(1.1); }
+
+.filter-card { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; }
+.filter-card h3 { margin-bottom: 15px; font-size: 16px; color: #333; text-align: left;}
+.chart-wrapper { width: 100%; margin-top: 20px; }

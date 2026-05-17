@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAT Study Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div id="authContainer" class="container">
+        <h1 id="authTitle">🔒 Login</h1>
+        <form id="authForm">
+            <input type="email" id="authEmail" placeholder="Email Address" required>
+            <input type="password" id="authPassword" placeholder="Password" required>
+            <button type="submit" id="authBtn">Login</button>
+        </form>
+        <p id="toggleAuthText">Don't have an account? <span id="switchAuth">Sign Up</span></p>
+    </div>
+
+    <div id="appContainer" class="container" style="display: none;">
+        
+        <div class="header-inline">
+            <h1 id="welcomeText">👋 Hello!</h1>
+            <div class="header-buttons">
+                <button id="homeBtn" class="nav-btn" style="display: none;">🏠 Back to Menu</button>
+                <button id="logoutBtn" class="danger-btn">Logout</button>
+            </div>
+        </div>
+        
+        <div id="homeView" class="menu-grid">
+            <button id="navToDataBtn" class="big-btn yellow-btn">📝 Add Data</button>
+            <button id="navToGraphBtn" class="big-btn yellow-btn">📊 View Graphs</button>
+        </div>
+
+        <div id="dataView" style="display: none;">
+            <form id="studyForm">
+                <input type="date" id="dateInput" required>
+                <div class="select-group">
+                    <select id="categoryInput" required>
+                        <option value="" disabled selected>Select Category</option>
+                        <option value="BMS">BMS</option>
+                        <option value="TV">TV</option>
+                        <option value="KFF">KFF</option>
+                        <option value="SEK">SEK</option>
+                    </select>
+                    <select id="subCategoryInput" required disabled>
+                        <option value="" disabled selected>Section</option>
+                    </select>
+                </div>
+                <input type="number" id="questionInput" placeholder="Questions Solved" required>
+                <button type="submit" class="yellow-btn">Submit Data</button>
+            </form>
+
+            <div class="table-wrapper">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>Score / Max</th>
+                            <th style="width: 50px; text-align: center;">Del</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="graphView" style="display: none;">
+            <div class="filter-card">
+                <h3>🔍 Graph Filter</h3>
+                <div class="filter-group">
+                    <select id="graphCatSelect">
+                        <option value="TUM">Total Exam Score</option>
+                        <option value="BMS">BMS Category</option>
+                        <option value="TV">TV Category</option>
+                        <option value="KFF">KFF Category</option>
+                        <option value="SEK">SEK Category</option>
+                    </select>
+                    <select id="graphSubSelect" disabled>
+                        <option value="TUM">Total of All Sections</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="chart-wrapper">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
