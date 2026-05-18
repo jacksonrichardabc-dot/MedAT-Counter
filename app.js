@@ -31,13 +31,16 @@ const SINAV_YUZDELERI = {
     "SEK": { "Emotionen regulieren 😌": 10/3, "Emotionen erkennen 🎭": 10/3, "Sociales Entscheiden 🤝": 10/3 }
 };
 
+// DOM Nodes
 const authContainer = document.getElementById('authContainer'), appContainer = document.getElementById('appContainer'), welcomeText = document.getElementById('welcomeText');
 const homeView = document.getElementById('homeView'), dataView = document.getElementById('dataView'), graphView = document.getElementById('graphView'), percentView = document.getElementById('percentView');
+const reader1View = document.getElementById('reader1View'), reader2View = document.getElementById('reader2View');
+
 const categoryInput = document.getElementById('categoryInput'), subCategoryInput = document.getElementById('subCategoryInput'), tableBody = document.getElementById('tableBody');
 const graphCatSelect = document.getElementById('graphCatSelect'), graphSubSelect = document.getElementById('graphSubSelect');
 const percentCatSelect = document.getElementById('percentCatSelect'), percentSubSelect = document.getElementById('percentSubSelect');
 
-let currentUser = null, myChartInstance = null, percentChartInstance = null, isLoginMode = true, tumVeriler = []; 
+let currentUser = null, myChartInstance = null, percentChartInstance = null, isLoginMode = true, tumVeriler = [], kütüphaneMetinleri = []; 
 
 function formatliTarih(tarihString) {
     const aylar = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -71,16 +74,23 @@ percentCatSelect.addEventListener('change', (e) => { populateSubCategories(e.tar
 percentSubSelect.addEventListener('change', () => updatePercentGraph());
 
 function showView(viewName) {
-    [homeView, dataView, graphView, percentView].forEach(v => v.style.display = 'none');
+    [homeView, dataView, graphView, percentView, reader1View, reader2View].forEach(v => v.style.display = 'none');
     document.getElementById('homeBtn').style.display = 'block';
+    
+    pauseReader1(); pauseReader2();
+
     if (viewName === 'home') { homeView.style.display = 'flex'; document.getElementById('homeBtn').style.display = 'none'; }
     else if (viewName === 'data') { dataView.style.display = 'block'; setTodayDate(); renderTable(); }
     else if (viewName === 'graph') { graphView.style.display = 'block'; updateGraph(); }
     else if (viewName === 'percent') { percentView.style.display = 'block'; updatePercentGraph(); }
+    else if (viewName === 'reader1') { reader1View.style.display = 'block'; }
+    else if (viewName === 'reader2') { reader2View.style.display = 'block'; }
 }
 document.getElementById('navToDataBtn').addEventListener('click', () => showView('data'));
 document.getElementById('navToGraphBtn').addEventListener('click', () => showView('graph'));
 document.getElementById('navToPercentBtn').addEventListener('click', () => showView('percent'));
+document.getElementById('navToReader1Btn').addEventListener('click', () => showView('reader1'));
+document.getElementById('navToReader2Btn').addEventListener('click', () => showView('reader2'));
 document.getElementById('homeBtn').addEventListener('click', () => showView('home'));
 
 document.getElementById('switchAuth').addEventListener('click', () => {
@@ -96,7 +106,9 @@ onAuthStateChanged(auth, (user) => {
         currentUser = user;
         welcomeText.innerText = `👋 Hello, ${user.email.split('@')[0].toUpperCase()}!`;
         authContainer.style.display = "none"; appContainer.style.display = "block";
-        showView('home'); fetchDataFromFirebase(); 
+        showView('home'); 
+        fetchDataFromFirebase();
+        fetchLibraryFromFirebase(); // Login olunca metinleri de indir
     } else { currentUser = null; authContainer.style.display = "block"; appContainer.style.display = "none"; }
 });
 
@@ -111,7 +123,7 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
 });
 document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
 
-// ADD DATA
+// DATA ENTRY
 document.getElementById('studyForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -208,7 +220,6 @@ function renderTable() {
 
                 const gosterilecekMaxYuzde = dersinSinavYuzdesi % 1 === 0 ? dersinSinavYuzdesi : dersinSinavYuzdesi.toFixed(1);
 
-                // DEĞİŞİKLİK BURADA: Hesaplanan yüzde artık yeşil değil, standart siyah kalın fontta (<strong>)
                 tr.innerHTML = `
                     <td style="padding-left: 20px;">${data.bolum} ${denemeBadge}</td>
                     <td><strong>${data.soru}</strong> / ${maksSoru}</td>
@@ -390,3 +401,199 @@ function updatePercentGraph() {
         }
     });
 }
+
+// =======================================================================
+// ==================== TEXT LIBRARY MANAGEMENT ==========================
+// =======================================================================
+
+async function fetchLibraryFromFirebase() {
+    if (!currentUser) return;
+    try {
+        const q = query(collection(db, "okumaMetinleri"), where("userId", "==", currentUser.uid));
+        const snapshot = await getDocs(q);
+        kütüphaneMetinleri = [];
+        snapshot.forEach(doc => kütüphaneMetinleri.push({ id: doc.id, ...doc.data() }));
+        renderLibraryDropdowns();
+    } catch(err) { console.error("Error fetching library:", err); }
+}
+
+function renderLibraryDropdowns() {
+    const r1Select = document.getElementById('r1LibrarySelect');
+    const r2Select = document.getElementById('r2LibrarySelect');
+    
+    const optionsHtml = '<option value="" disabled selected>Load from Library...</option>' + 
+        kütüphaneMetinleri.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+        
+    if(r1Select) r1Select.innerHTML = optionsHtml;
+    if(r2Select) r2Select.innerHTML = optionsHtml;
+}
+
+async function saveTextToLibrary(titleId, textId) {
+    if (!currentUser) return;
+    const title = document.getElementById(titleId).value.trim();
+    const text = document.getElementById(textId).value.trim();
+    
+    if(!title || !text) return alert("Please fill in both the title and text fields to save!");
+    
+    try {
+        await addDoc(collection(db, "okumaMetinleri"), {
+            userId: currentUser.uid,
+            title: title,
+            text: text,
+            createdAt: new Date().getTime()
+        });
+        document.getElementById(titleId).value = "";
+        alert("Text successfully saved to library!");
+        await fetchLibraryFromFirebase();
+    } catch(err) { alert("Failed to save text."); }
+}
+
+async function deleteTextFromLibrary(selectId) {
+    const selectEl = document.getElementById(selectId);
+    const docId = selectEl.value;
+    if(!docId) return alert("Please select a text from the dropdown list to delete!");
+    
+    if(confirm("Are you sure you want to delete this text from your library?")) {
+        try {
+            await deleteDoc(doc(db, "okumaMetinleri", docId));
+            alert("Text removed from library.");
+            await fetchLibraryFromFirebase();
+        } catch(err) { alert("Failed to delete text."); }
+    }
+}
+
+function loadTextFromLibrary(selectId, textInputId) {
+    const docId = document.getElementById(selectId).value;
+    if(!docId) return alert("Please select a saved text first!");
+    const item = kütüphaneMetinleri.find(m => m.id === docId);
+    if(item) {
+        document.getElementById(textInputId).value = item.text;
+    }
+}
+
+// Wire up library event listeners
+document.getElementById('r1SaveBtn').addEventListener('click', () => saveTextToLibrary('r1SaveTitle', 'r1TextInput'));
+document.getElementById('r2SaveBtn').addEventListener('click', () => saveTextToLibrary('r2SaveTitle', 'r2TextInput'));
+document.getElementById('r1LibraryLoadBtn').addEventListener('click', () => loadTextFromLibrary('r1LibrarySelect', 'r1TextInput'));
+document.getElementById('r2LibraryLoadBtn').addEventListener('click', () => loadTextFromLibrary('r2LibrarySelect', 'r2TextInput'));
+document.getElementById('r1LibraryDelBtn').addEventListener('click', () => deleteTextFromLibrary('r1LibrarySelect'));
+document.getElementById('r2LibraryDelBtn').addEventListener('click', () => deleteTextFromLibrary('r2LibrarySelect'));
+
+
+// =======================================================================
+// ==================== SPEED READER CORE MOTOR ==========================
+// =======================================================================
+
+// --- READER 1: HIGHLIGHT MODE ---
+let r1Words = [], r1Index = 0, r1Interval = null, r1IsPlaying = false;
+const r1Display = document.getElementById('r1DisplayArea'), r1PlayBtn = document.getElementById('r1Play');
+
+document.getElementById('r1LoadBtn').addEventListener('click', () => {
+    const text = document.getElementById('r1TextInput').value.trim();
+    if (!text) return alert("Please enter or load some text!");
+    r1Words = text.split(/\s+/);
+    r1Index = 0;
+    r1Display.innerHTML = r1Words.map((w, i) => `<span id="r1w-${i}" class="word-span">${w}</span>`).join(' ');
+    updateHighlight();
+});
+
+function updateHighlight() {
+    if (r1Words.length === 0) return;
+    document.querySelectorAll('#r1DisplayArea .word-span').forEach(el => el.classList.remove('active-word'));
+    if (r1Index >= r1Words.length) r1Index = r1Words.length - 1;
+    if (r1Index < 0) r1Index = 0;
+    
+    const targetWord = document.getElementById(`r1w-${r1Index}`);
+    if (targetWord) {
+        targetWord.classList.add('active-word');
+        targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function playReader1() {
+    if (r1Words.length === 0) return alert("Load some text first!");
+    if (r1Index >= r1Words.length - 1) r1Index = 0;
+    r1IsPlaying = true;
+    r1PlayBtn.innerHTML = "⏸️ Pause";
+    r1PlayBtn.classList.replace('yellow-btn', 'danger-btn');
+    
+    const wpm = parseInt(document.getElementById('r1Speed').value);
+    const delayMs = Math.round(60000 / wpm);
+
+    r1Interval = setInterval(() => {
+        r1Index++;
+        if (r1Index >= r1Words.length) { pauseReader1(); } 
+        else { updateHighlight(); }
+    }, delayMs);
+}
+
+function pauseReader1() {
+    r1IsPlaying = false;
+    clearInterval(r1Interval);
+    if(r1PlayBtn) {
+        r1PlayBtn.innerHTML = "▶️ Play";
+        r1PlayBtn.classList.replace('danger-btn', 'yellow-btn');
+    }
+}
+
+r1PlayBtn.addEventListener('click', () => r1IsPlaying ? pauseReader1() : playReader1());
+document.getElementById('r1Prev').addEventListener('click', () => { r1Index -= 10; updateHighlight(); });
+document.getElementById('r1Next').addEventListener('click', () => { r1Index += 10; updateHighlight(); });
+document.getElementById('r1Speed').addEventListener('input', (e) => {
+    document.getElementById('r1WpmValue').innerText = e.target.value;
+    if (r1IsPlaying) { pauseReader1(); playReader1(); } 
+});
+
+
+// --- READER 2: SINGLE WORD MODE ---
+let r2Words = [], r2Index = 0, r2Interval = null, r2IsPlaying = false;
+const r2Display = document.getElementById('r2DisplayArea'), r2PlayBtn = document.getElementById('r2Play');
+
+document.getElementById('r2LoadBtn').addEventListener('click', () => {
+    const text = document.getElementById('r2TextInput').value.trim();
+    if (!text) return alert("Please enter or load some text!");
+    r2Words = text.split(/\s+/);
+    r2Index = 0;
+    updateSingleWord();
+});
+
+function updateSingleWord() {
+    if (r2Words.length === 0) return;
+    if (r2Index >= r2Words.length) r2Index = r2Words.length - 1;
+    if (r2Index < 0) r2Index = 0;
+    r2Display.innerText = r2Words[r2Index];
+}
+
+function playReader2() {
+    if (r2Words.length === 0) return alert("Load some text first!");
+    if (r2Index >= r2Words.length - 1) r2Index = 0; 
+    r2IsPlaying = true;
+    r2PlayBtn.innerHTML = "⏸️ Pause";
+    r2PlayBtn.classList.replace('yellow-btn', 'danger-btn');
+    
+    const wpm = parseInt(document.getElementById('r2Speed').value);
+    const delayMs = Math.round(60000 / wpm); 
+
+    r2Interval = setInterval(() => {
+        r2Index++;
+        if (r2Index >= r2Words.length) { pauseReader2(); } 
+        else { updateSingleWord(); }
+    }, delayMs);
+}
+
+function pauseReader2() {
+    r2IsPlaying = false;
+    clearInterval(r2Interval);
+    if(r2PlayBtn) {
+        r2PlayBtn.innerHTML = "▶️ Play";
+        r2PlayBtn.classList.replace('danger-btn', 'yellow-btn');
+    }
+}
+
+r2PlayBtn.addEventListener('click', () => r2IsPlaying ? pauseReader2() : playReader2());
+document.getElementById('r2Prev').addEventListener('click', () => { r2Index -= 10; updateSingleWord(); });
+document.getElementById('r2Next').addEventListener('click', () => { r2Index += 10; updateSingleWord(); });
+document.getElementById('r2Speed').addEventListener('input', (e) => {
+    document.getElementById('r2WpmValue').innerText = e.target.value;
+    if (r2IsPlaying) { pauseReader2(); playReader2(); } 
+});
