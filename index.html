@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedAT Study Tracker</title>
+    <title>MedAT Study Tracker & Reader</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -14,7 +14,7 @@
         <form id="authForm">
             <input type="email" id="authEmail" placeholder="Email Address" required>
             <input type="password" id="authPassword" placeholder="Password" required>
-            <button type="submit" id="authBtn">Login</button>
+            <button type="submit" id="authBtn" class="yellow-btn">Login</button>
         </form>
         <p id="toggleAuthText">Don't have an account? <span id="switchAuth">Sign Up</span></p>
     </div>
@@ -33,6 +33,8 @@
             <button id="navToDataBtn" class="big-btn yellow-btn">📝 Add Data</button>
             <button id="navToGraphBtn" class="big-btn yellow-btn">📊 View Question Graphs</button>
             <button id="navToPercentBtn" class="big-btn yellow-btn">💯 Percent Calculation</button>
+            <button id="navToReader1Btn" class="big-btn yellow-btn">📖 Speed Reader (Highlight Text)</button>
+            <button id="navToReader2Btn" class="big-btn yellow-btn">👁️ Speed Reader (Single Word)</button>
         </div>
 
         <div id="dataView" style="display: none;">
@@ -64,8 +66,7 @@
                             <th style="width: 50px; text-align: center;">Del</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody">
-                        </tbody>
+                    <tbody id="tableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -109,6 +110,86 @@
             </div>
             <div class="chart-wrapper">
                 <canvas id="percentChart"></canvas>
+            </div>
+        </div>
+
+        <div id="reader1View" style="display: none;">
+            <div class="filter-card">
+                <h3>📖 Highlight Speed Reader</h3>
+                
+                <div class="library-section">
+                    <div class="select-group">
+                        <select id="r1LibrarySelect">
+                            <option value="" disabled selected>Load from Library...</option>
+                        </select>
+                        <button id="r1LibraryLoadBtn" class="nav-btn" type="button">Load</button>
+                        <button id="r1LibraryDelBtn" class="danger-btn" type="button" style="padding:12px;">🗑️</button>
+                    </div>
+                </div>
+
+                <textarea id="r1TextInput" rows="4" placeholder="Paste the text you want to read here..."></textarea>
+                
+                <div class="select-group" style="margin-top: 10px;">
+                    <input type="text" id="r1SaveTitle" placeholder="Enter text title to save..." style="width:70%;">
+                    <button id="r1SaveBtn" class="nav-btn" type="button" style="width:30%; font-size:14px;">Save Text</button>
+                </div>
+
+                <button id="r1LoadBtn" class="yellow-btn" style="width: 100%; margin-top: 15px;">Prepare Text for Reading</button>
+                
+                <div class="reader-controls" style="margin-top: 15px;">
+                    <div class="speed-slider">
+                        <label>Speed: <span id="r1WpmValue">300</span> WPM</label>
+                        <input type="range" id="r1Speed" min="100" max="1000" step="20" value="300">
+                    </div>
+                    <div class="playback-controls">
+                        <button id="r1Prev" class="nav-btn">⏪ -10</button>
+                        <button id="r1Play" class="yellow-btn">▶️ Play</button>
+                        <button id="r1Next" class="nav-btn">⏩ +10</button>
+                    </div>
+                </div>
+            </div>
+            <div id="r1DisplayArea" class="reader-box highlight-box">
+                <p style="color:#999; text-align:center; margin-top:50px;">Text will appear here...</p>
+            </div>
+        </div>
+
+        <div id="reader2View" style="display: none;">
+            <div class="filter-card">
+                <h3>👁️ Single Word Speed Reader</h3>
+                
+                <div class="library-section">
+                    <div class="select-group">
+                        <select id="r2LibrarySelect">
+                            <option value="" disabled selected>Load from Library...</option>
+                        </select>
+                        <button id="r2LibraryLoadBtn" class="nav-btn" type="button">Load</button>
+                        <button id="r2LibraryDelBtn" class="danger-btn" type="button" style="padding:12px;">🗑️</button>
+                    </div>
+                </div>
+
+                <textarea id="r2TextInput" rows="4" placeholder="Paste the text you want to read here..."></textarea>
+                
+                <div class="select-group" style="margin-top: 10px;">
+                    <input type="text" id="r2SaveTitle" placeholder="Enter text title to save..." style="width:70%;">
+                    <button id="r2SaveBtn" class="nav-btn" type="button" style="width:30%; font-size:14px;">Save Text</button>
+                </div>
+
+                <button id="r2LoadBtn" class="yellow-btn" style="width: 100%; margin-top: 15px;">Prepare Text for Reading</button>
+                
+                <div class="reader-controls" style="margin-top: 15px;">
+                    <div class="speed-slider">
+                        <label>Speed: <span id="r2WpmValue">300</span> WPM</label>
+                        <input type="range" id="r2Speed" min="100" max="1000" step="20" value="300">
+                    </div>
+                    <div class="playback-controls">
+                        <button id="r2Prev" class="nav-btn">⏪ -10</button>
+                        <button id="r2Play" class="yellow-btn">▶️ Play</button>
+                        <button id="r2Next" class="nav-btn">⏩ +10</button>
+                    </div>
+                </div>
+            </div>
+            <div class="reader-box single-word-box">
+                <span id="r2DisplayArea">Ready</span>
             </div>
         </div>
 
