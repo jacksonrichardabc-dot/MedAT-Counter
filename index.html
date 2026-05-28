@@ -35,7 +35,6 @@
             <button id="navToPercentBtn" class="big-btn yellow-btn">💯 Percent Calculation</button>
             <button id="navToReader1Btn" class="big-btn yellow-btn">📖 Speed Reader (Highlight Text)</button>
             <button id="navToReader2Btn" class="big-btn yellow-btn">👁️ Speed Reader (Single Word)</button>
-            <button id="navToTestBtn" class="big-btn yellow-btn">🧠 Test Center (Genetics)</button>
         </div>
 
         <div id="dataView" style="display: none;">
@@ -191,44 +190,6 @@
             </div>
             <div class="reader-box single-word-box">
                 <span id="r2DisplayArea">Ready</span>
-            </div>
-        </div>
-
-        <div id="testView" style="display: none;">
-            <div class="filter-card">
-                <h3>🧠 Genetics Interactive Test</h3>
-                
-                <div class="test-controls select-group" id="testSetupArea">
-                <input type="number" id="testStartQ" placeholder="Başlangıç (Örn: 1)" min="1" value="1" style="width: 35%;">
-                <input type="number" id="testEndQ" placeholder="Bitiş (Örn: 60)" min="1" value="60" style="width: 35%;">
-                <button id="startTestBtn" class="yellow-btn" style="width: 30%;">Start Test</button>
-                </div>
-
-                <div id="testActiveArea" style="display: none; margin-top: 20px;">
-                    <div class="header-inline" style="margin-bottom: 15px; border-bottom: none; padding-bottom: 0;">
-                        <h4 id="questionCounterText" style="color: #555;">Question 1 / 5</h4>
-                        <div style="font-weight: bold; font-size: 16px;">
-                            <span style="color: #28a745;">✔️ <span id="correctScore">0</span></span> | 
-                            <span style="color: #dc3545;">❌ <span id="wrongScore">0</span></span>
-                        </div>
-                    </div>
-
-                    <div class="reader-box" style="margin-top: 0; padding: 25px;">
-                        <h3 id="questionTitle" style="margin-bottom: 20px; font-size: 18px; line-height: 1.5; color: #2c3e50;"></h3>
-                        <div id="optionsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-                            </div>
-                        
-                        <div id="feedbackBox" style="display: none; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px;">
-                            </div>
-
-                        <div style="display: flex; gap: 10px;">
-                            <button id="submitAnswerBtn" class="yellow-btn" style="flex-grow: 1;">Check Answer</button>
-                            <button id="nextQuestionBtn" class="nav-btn" style="display: none; flex-grow: 1;">Next Question ➡️</button>
-                        </div>
-                    </div>
-                    
-                    <button id="resetTestBtn" class="danger-btn" style="width: 100%; margin-top: 20px;">🛑 End & Reset Test</button>
-                </div>
             </div>
         </div>
 
